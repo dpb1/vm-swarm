@@ -1,1 +1,2 @@
 includes: ['layer:apt', 'layer:basic']
+repo: "git@github.com:dpb1/vm-swarm.git"
