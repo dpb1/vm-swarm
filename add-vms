@@ -45,6 +45,7 @@ for i in $(seq 0 1 | sort -r); do
 done
 
 for i in $(seq 0 1 | sort -r); do
+        hostname="${PHYS_HOST}vm${i}.maas"
         # Wait for the domain to be shutoff, as a safeguard
         while virsh domstate "$hostname" | grep 'running' > /dev/null 2>&1; do
             sleep 5
