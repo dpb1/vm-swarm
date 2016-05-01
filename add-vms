@@ -15,7 +15,7 @@ virsh pool-destroy vm-swarm || true
 virsh pool-delete vm-swarm || true
 virsh net-info default && virsh net-destroy default && virsh net-undefine default
 
-[ -d /var/lib/vm-swarm ] || sudo install -d /var/lib/vm-swarm --owner "$USER" --group "$USER"
+[ -d /var/lib/vm-swarm ] || sudo install -d /var/lib/vm-swarm --owner ubuntu --group ubuntu
 
 apt-get install -y maas-cli virtinst kvm
 maas list | grep '^admin ' && maas logout admin
