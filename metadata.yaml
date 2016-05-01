@@ -1,0 +1,8 @@
+name: vm-swarm
+summary: Create a bunch of vms, register to maas.
+maintainer: David Britton <davidpbritton@gmail.com>
+description: |
+  Create a bunch of vms, register to maas.
+tags:
+  - misc
+subordinate: false
