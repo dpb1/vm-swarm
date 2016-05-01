@@ -1,7 +1,7 @@
 #!/bin/bash -ex
 
-MAAS_URL="http://10.5.0.5/MAAS"
-MAAS_OAUTH="ruVgZVX3jRfLbgjRXY:rhMSWPfeCA92qDgyE8:ZQUMMaSQsZrGjzuzZ79V7b36Hq984Y6N"
+MAAS_URL=$1
+MAAS_OAUTH=$2
 PHYS_HOST=$(hostname)
 BRIDGE="juju-br0"
 

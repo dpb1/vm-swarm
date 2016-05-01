@@ -12,7 +12,8 @@ def install_vm_swarm():
     set_state('vm-swarm.installed')
 
 def setup_vms():
-    subprocess.check_call(["add-vms"])
+    cfg = hookenv.config()
+    subprocess.check_call(["./add-vms", cfg["maas-url"], cfg["maas-oauth"]])
 
 def install_packages():
     hookenv.status_set('maintenance', 'Installing packages')
