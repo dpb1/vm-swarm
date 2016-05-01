@@ -1,26 +1,8 @@
 #!/bin/bash -ex
-#
-#    orange-box-setup-kvms - create some virtual machines
-#    Copyright (C) 2014 Canonical Ltd.
-#
-#    Authors: Ronald McCollam <ronald.mccollam@canonical.com>
-#             Dustin Kirkland <kirkland@canonical.com>
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, version 3 of the License.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 MAAS_URL="http://10.5.0.5/MAAS"
 MAAS_OAUTH="ruVgZVX3jRfLbgjRXY:rhMSWPfeCA92qDgyE8:ZQUMMaSQsZrGjzuzZ79V7b36Hq984Y6N"
-PHYS_HOST=`hostname`
+PHYS_HOST=$(hostname)
 BRIDGE="juju-br0"
 
 if [ "$(id -u)" != "0" ]; then
@@ -33,7 +15,7 @@ virsh pool-destroy vm-swarm || true
 virsh pool-delete vm-swarm || true
 virsh net-info default && virsh net-destroy default && virsh net-undefine default
 
-[ -d /var/lib/vm-swarm ] || sudo install -d /var/lib/vm-swarm --owner $USER --group $USER
+[ -d /var/lib/vm-swarm ] || sudo install -d /var/lib/vm-swarm --owner "$USER" --group "$USER"
 
 apt-get install -y maas-cli virtinst kvm
 maas list | grep '^admin ' && maas logout admin
@@ -44,30 +26,47 @@ maas admin tags new name=neutron 2>/dev/null || true
 
 for i in $(seq 0 1 | sort -r); do
         hostname="${PHYS_HOST}vm${i}.maas"
-        virsh destroy $hostname 2>/dev/null || true
-        virsh undefine $hostname 2>/dev/null || true
-        rm -f /var/lib/${hostname}-1.img /var/lib/${hostname}-2.img
+        virsh destroy "$hostname" 2>/dev/null || true
+        virsh undefine "$hostname" 2>/dev/null || true
+        rm -f "/var/lib/${hostname}-1.img" "/var/lib/${hostname}-2.img"
         echo "INFO: Installing virtual machine: $hostname"
-        virt-install --debug --virt-type=kvm --name $hostname --ram 4096 --disk=path=/var/lib/${hostname}-1.img,size=40 --disk=path=/var/lib/${hostname}-2.img,size=2 --vcpus=2 --os-type=linux --pxe --network=bridge=${BRIDGE},model=virtio --network=bridge=${BRIDGE},model=rtl8139 --boot network --video=cirrus --graphics vnc
+        virt-install --debug \
+            --virt-type=kvm \
+            --name "$hostname" \
+            --ram 4096 \
+            --disk=path="/var/lib/${hostname}-1.img,size=40" \
+            --disk=path="/var/lib/${hostname}-2.img,size=2" \
+            --vcpus=2 --os-type=linux --pxe \
+            --network=bridge=${BRIDGE},model=virtio \
+            --network=bridge=${BRIDGE},model=rtl8139 \
+            --boot network \
+            --video=cirrus \
+            --graphics vnc
 done
 
 for i in $(seq 0 1 | sort -r); do
         # Wait for the domain to be shutoff, as a safeguard
-        while virsh domstate $hostname | grep 'running' > /dev/null 2>&1; do
+        while virsh domstate "$hostname" | grep 'running' > /dev/null 2>&1; do
             sleep 5
             echo "Waiting for Domain to be not 'running'"
         done
 
         #Workaround for bug: https://bugs.launchpad.net/maas/+bug/1367482
-        virsh dumpxml $hostname > /tmp/${hostname}.xml
-        sed -i -e "s#<model type='rtl8139'/>#<model type='rtl8139'/> <rom file=''/>#" /tmp/${hostname}.xml
-        virsh define /tmp/${hostname}.xml
-        virsh autostart $hostname
-        mac=$(virsh dumpxml $hostname | python -c 'import sys, lxml.etree; print list(lxml.etree.parse(sys.stdin).iter("mac"))[0].get("address")')
-        mac2=$(virsh dumpxml $hostname | python -c 'import sys, lxml.etree; print list(lxml.etree.parse(sys.stdin).iter("mac"))[0].get("address")')
-        system_id=$(maas admin nodes list mac_address=$mac | grep system_id | cut -d'"' -f4)
-        maas admin node update $system_id hostname=$hostname power_type=virsh power_parameters_power_address=qemu+ssh://ubuntu@${PHYS_HOST}.maas/system power_parameters_power_id=$hostname
-        maas admin tag update-nodes "virtual" add=$system_id
-        maas admin node commission $system_id || true
+        virsh dumpxml "$hostname" > "/tmp/${hostname}.xml"
+        sed -i -e \
+            "s#<model type='rtl8139'/>#<model type='rtl8139'/> <rom file=''/>#" \
+            "/tmp/${hostname}.xml"
+        virsh define "/tmp/${hostname}.xml"
+        virsh autostart "$hostname"
+        mac=$(virsh dumpxml "$hostname" | python -c 'import sys, lxml.etree; print list(lxml.etree.parse(sys.stdin).iter("mac"))[0].get("address")')
+        system_id=$(maas admin nodes list "mac_address=$mac" | grep system_id | cut -d'"' -f4)
+        maas admin node update \
+            "$system_id" \
+            "hostname=$hostname" \
+            power_type=virsh \
+            "power_parameters_power_address=qemu+ssh://ubuntu@${PHYS_HOST}.maas/system" \
+            "power_parameters_power_id=$hostname"
+        maas admin tag update-nodes "virtual" "add=$system_id"
+        maas admin node commission "$system_id" || true
 done
 
