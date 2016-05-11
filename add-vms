@@ -1,7 +1,8 @@
 #!/bin/bash -ex
 
-MAAS_URL=$1
-MAAS_OAUTH=$2
+NUM_VMS=$1
+MAAS_URL=$2
+MAAS_OAUTH=$3
 PHYS_HOST=$(hostname)
 BRIDGE="juju-br0"
 
@@ -24,7 +25,7 @@ maas admin tags new name=virtual 2>/dev/null || true
 maas admin tags new name=bootstrap 2>/dev/null || true
 maas admin tags new name=neutron 2>/dev/null || true
 
-for i in $(seq 0 1 | sort -r); do
+for i in $(seq 1 "$NUM_VMS" | sort -r); do
         hostname="${PHYS_HOST}vm${i}.maas"
         virsh destroy "$hostname" 2>/dev/null || true
         virsh undefine "$hostname" 2>/dev/null || true
